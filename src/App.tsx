@@ -1,10 +1,8 @@
+import {Router} from "@/router";
+
 function App() {
   return (
-    <>
-      <div>
-        hello
-      </div>
-    </>
+      <Router/>
   )
 }
 

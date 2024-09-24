@@ -8,8 +8,8 @@ const BookItem: FC<Props> = (props) => {
   const queryClient = useQueryClient()
 
   return (
-    // <div key={id} className={`${s.bookItem} ${s.visited}`} onClick={() => onClick(id)}>
-    <div key={id} className={`${s.bookItem} ${queryClient.getQueryData(['posts', id])? s.visited: ''}`} onClick={() => onClick(id)}>
+    // <div key={id} className={`${s.bookItem} ${s.visited}`} onClick={() => onClick(() => onClick(id)}>
+    <div key={id} className={`${s.bookItem} ${queryClient.getQueryData(['books', id])? s.visited: ''}`} onClick={() => onClick(id)}>
       <h3 className={s.bookTitle}>{title}</h3>
       <img alt={title} src={cover} className={s.bookCover}/>
       {authors.map(a => <h4 key={a.name} className={s.bookAuthor}>{`${a.name} ${a.birth_year} - ${a.death_year}`}</h4>)}

@@ -1,0 +1,40 @@
+.loader {
+  border: 10px solid #f3f3f3;
+  border-top: 10px solid #06c;
+  border-radius: 50%;
+  width: 80px;
+  height: 80px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+  display: block;
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (max-width: 1200px) {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #06c;
+    width: 80px;
+    height: 80px;
+  }
+
+  @media (max-width: 900px) {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #06c;
+    width: 60px;
+    height: 60px;
+  }
+
+  @media (max-width: 600px) {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #06c;
+    width: 30px;
+    height: 30px;
+  }
+}

@@ -5,6 +5,10 @@ import BookItem from "@/sections/books/BookItem";
 import {ChangeEvent, useEffect, useRef, useState} from "react";
 import {useDebounce} from "@/common/hooks/use-debounce";
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
+import TextField from "@/common/textfield/TextField";
+import Button from "@/common/button/Button";
+import CheckBox from "@/common/checkbox/CheckBox";
+import Spinner from "@/common/spinner/Spinner";
 
 const BooksView = () => {
   const navigate = useNavigate();
@@ -25,14 +29,12 @@ const BooksView = () => {
     error,
     fetchNextPage,
     hasNextPage,
-    // isFetching,
     isError,
     isLoading,
     isFetchingNextPage,
-    // status,
   } = useInfiniteQuery({
     queryKey: ['books', debouncedTitleQuery, debouncedAuthorQuery, languages],
-    queryFn: ({pageParam=1}) => fetchBooks(pageParam, debouncedTitleQuery, debouncedAuthorQuery, languages),
+    queryFn: ({pageParam = 1}) => fetchBooks(pageParam, debouncedTitleQuery, debouncedAuthorQuery, languages),
     initialPageParam: 1,
     getNextPageParam: () => currentPageRef.current + 1,
   })
@@ -40,19 +42,19 @@ const BooksView = () => {
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setTitleQuery(value);
-    updateSearchParams({ title: value, author: authorQuery, language: languages.join(','), page: '1' });
+    updateSearchParams({title: value, author: authorQuery, language: languages.join(','), page: '1'});
   };
 
   const handleAuthorChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setAuthorQuery(value);
-    updateSearchParams({ title: titleQuery, author: value, language: languages.join(','), page: '1' });
+    updateSearchParams({title: titleQuery, author: value, language: languages.join(','), page: '1'});
   };
 
   const toggleLanguage = (lang: string) => {
     const updatedLanguages = languages.includes(lang) ? languages.filter((l) => l !== lang) : [...languages, lang];
     setLanguages(updatedLanguages);
-    updateSearchParams({ title: titleQuery, author: authorQuery, language: updatedLanguages.join(','), page: '1' });
+    updateSearchParams({title: titleQuery, author: authorQuery, language: updatedLanguages.join(','), page: '1'});
   };
 
   const updateSearchParams = (newParams: Record<string, string>) => {
@@ -118,71 +120,74 @@ const BooksView = () => {
   }, [hasNextPage, isFetchingNextPage]);
 
 
-  const onBookClickHandler = (id:number) => {
+  const onBookClickHandler = (id: number) => {
     const serchParams = location.search
     navigate(`/${id}${serchParams}`)
   }
 
-  if (isLoading) return <div style={{ textAlign: "center" }}>Loading...</div>;
-  if (isError && error instanceof Error) return <div style={{ textAlign: "center" }}>Error: {error.message}</div>;
+  if (isError && error instanceof Error) return <div
+    style={{textAlign: "center", color: "red"}}>Error: {error.message}</div>;
 
   return (
     <>
-      <button onClick={clearFilters}>Clear Filters</button>
-      <input
-        type="text"
-        placeholder="Search by book title"
-        value={titleQuery}
-        onChange={handleTitleChange}
-      />
-      <input
-        type="text"
-        placeholder="Search by author name"
-        value={authorQuery}
-        onChange={handleAuthorChange}
-      />
-      <div>
-        <label>
-          <input
-            type="checkbox"
+      <div className={s.filtersWrapper}>
+        <h3>Filters</h3>
+        <div className={s.textInputsWrapper}>
+        <TextField type="text"
+                   placeholder="Search by book title"
+                   value={titleQuery}
+                   onChange={handleTitleChange}
+                   disabled={isLoading}/>
+        <TextField type="text"
+                   placeholder="Search by author name"
+                   value={authorQuery}
+                   onChange={handleAuthorChange}
+                   disabled={isLoading}/>
+        </div>
+        <div className={s.checkboxesWrapper}>
+          <CheckBox
             checked={languages.includes('en')}
             onChange={() => toggleLanguage('en')}
-          />
-          English
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            checked={languages.includes('fr')}
-            onChange={() => toggleLanguage('fr')}
-          />
-          French
-        </label>
-        <label>
-          <input
-            type="checkbox"
+            disabled={isLoading}
+          >
+            English
+          </CheckBox>
+          <CheckBox
             checked={languages.includes('de')}
             onChange={() => toggleLanguage('de')}
-          />
-          German
-        </label>
+            disabled={isLoading}
+          >
+            German
+          </CheckBox>
+          <CheckBox
+            checked={languages.includes('fr')}
+            onChange={() => toggleLanguage('fr')}
+            disabled={isLoading}
+          >
+            French
+          </CheckBox>
+        </div>
+        <Button onClick={clearFilters} xType='red' disabled={isLoading}>Clear Filters</Button>
       </div>
 
-      <div className={s.bookGrid}>
-        {data?.pages.map((page) => page.results.map((book) => (
-          <BookItem
-            key={book.id}
-            cover={book.formats['image/jpeg'] as string}
-            title={book.title}
-            authors={book.authors}
-            downloads={book.download_count}
-            id={book.id}
-            onClick={onBookClickHandler}
-          />
-        )))}
-      </div>
+      {isLoading ? <Spinner/> : (
+        <div className={s.bookGrid}>
+          {data?.pages.map((page) => page.results.map((book) => (
+            <BookItem
+              key={book.id}
+              cover={book.formats['image/jpeg'] as string}
+              title={book.title}
+              authors={book.authors}
+              downloads={book.download_count}
+              id={book.id}
+              onClick={onBookClickHandler}
+            />
+          )))}
+        </div>
+      )
+      }
 
-      {isFetchingNextPage && <div style={{ textAlign: "center" }}>Loading more...</div>}
+      {isFetchingNextPage && <Spinner/>}
     </>
   );
 };

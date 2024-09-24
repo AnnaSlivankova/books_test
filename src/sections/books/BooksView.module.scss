@@ -1,3 +1,42 @@
+.filtersWrapper {
+  display: grid;
+  gap: 20px;
+  justify-items: center;
+  align-items: center;
+  grid-template-columns: 1fr;
+  margin-bottom: 20px;
+
+  h3 {
+    grid-column: 1 / -1;
+  }
+
+  .textInputsWrapper {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 20px;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+  }
+
+  .checkboxesWrapper {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+
+    @media (max-width: 600px) {
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+  }
+
+  button {
+    grid-column: 1 / -1;
+  }
+}
+
 .bookGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -24,29 +63,37 @@
   padding: 15px;
   transition: opacity 0.3s ease;
   cursor: pointer;
+  gap: 10px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 
   &.visited {
     opacity: 0.5; // Затенение для посещенных книг
   }
 
   .bookCover {
-    width: 100%;
+    width: auto;
     height: auto;
+    max-height: 300px;
     border-radius: 4px;
   }
 
   .bookTitle {
-    font-size: 1.2em;
+    font-size: 1.4em;
     margin: 10px 0;
+    text-align: center;
   }
 
   .bookAuthor {
-    font-size: 0.9em;
+    font-size: 1.2em;
     color: #555;
+    text-align: center;
   }
 
   .downloads {
-    font-size: 0.8em;
+    font-size: 1em;
     color: #777;
   }
 }

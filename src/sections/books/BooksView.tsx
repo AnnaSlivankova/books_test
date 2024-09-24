@@ -133,13 +133,11 @@ const BooksView = () => {
       <div className={s.filtersWrapper}>
         <h3>Filters</h3>
         <div className={s.textInputsWrapper}>
-        <TextField type="text"
-                   placeholder="Search by book title"
+        <TextField placeholder="Search by book title"
                    value={titleQuery}
                    onChange={handleTitleChange}
                    disabled={isLoading}/>
-        <TextField type="text"
-                   placeholder="Search by author name"
+        <TextField placeholder="Search by author name"
                    value={authorQuery}
                    onChange={handleAuthorChange}
                    disabled={isLoading}/>

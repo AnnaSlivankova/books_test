@@ -19,6 +19,7 @@ const BookPage = () => {
 
     const handleReturnToAllBooks = () => {
       const searchParams = location.search;
+      console.log(searchParams)
       navigate(`/${searchParams}`)
     }
 

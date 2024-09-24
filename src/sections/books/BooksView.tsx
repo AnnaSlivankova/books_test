@@ -2,21 +2,26 @@ import {useInfiniteQuery} from "@tanstack/react-query";
 import {fetchBooks} from "@/api/books-api";
 import s from './BooksView.module.scss'
 import BookItem from "@/sections/books/BookItem";
-import {ChangeEvent, useEffect, useState} from "react";
+import {ChangeEvent, useEffect, useRef, useState} from "react";
 import {useDebounce} from "@/common/hooks/use-debounce";
-import {useNavigate, useSearchParams} from "react-router-dom";
+import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 
 const BooksView = () => {
-  console.log('BooksView render')
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [titleQuery, setTitleQuery] = useState<string>(searchParams.get('title') || '');
   const [authorQuery, setAuthorQuery] = useState<string>(searchParams.get('author') || '');
-  const [languages, setLanguages] = useState<string[]>(searchParams.get('language') ? [searchParams.get('language')] : []);
+  const [languages, setLanguages] = useState<string[]>(searchParams.get('language') ? searchParams.get('language')!.split(',') : []);
+
+  // Используем useRef для хранения текущей страницы
+  const currentPageRef = useRef<number>(parseInt(searchParams.get('page') || '1', 10));
+
   const debouncedTitleQuery = useDebounce(titleQuery, 1000);
   const debouncedAuthorQuery = useDebounce(authorQuery, 1000);
 
+  // Используем useInfiniteQuery для пагинации
   const {
     data,
     isLoading,
@@ -27,7 +32,7 @@ const BooksView = () => {
     isFetchingNextPage,
   } = useInfiniteQuery({
     queryKey: ['books', debouncedTitleQuery, debouncedAuthorQuery, languages],
-    queryFn: ({pageParam = 1}) => fetchBooks(pageParam, debouncedTitleQuery, debouncedAuthorQuery, languages),
+    queryFn: ({ pageParam = currentPageRef.current }) => fetchBooks(pageParam, debouncedTitleQuery, debouncedAuthorQuery, languages),
     getNextPageParam: (lastPage) => {
       const nextUrl = lastPage.next;
       if (nextUrl) {
@@ -36,49 +41,43 @@ const BooksView = () => {
       }
       return undefined;
     },
-    enabled: true
+    enabled: true,
   });
-
-  console.log('data', data)
-  console.log('err', isError)
-
 
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setTitleQuery(value);
-    updateSearchParams({title: value, author: authorQuery, language: languages.join(',')});
+    updateSearchParams({ title: value, author: authorQuery, language: languages.join(','), page: '1' });
   };
 
   const handleAuthorChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setAuthorQuery(value);
-    updateSearchParams({title: titleQuery, author: value, language: languages.join(',')});
+    updateSearchParams({ title: titleQuery, author: value, language: languages.join(','), page: '1' });
   };
 
   const toggleLanguage = (lang: string) => {
-   const updatedLanguages= setLanguages((prev) =>
-      prev.includes(lang) ? prev.filter((l) => l !== lang) : [...prev, lang]
-    );
-
-    updateSearchParams({title: titleQuery, author: authorQuery, language: languages.join(',')});
-
-    return updatedLanguages
+    const updatedLanguages = languages.includes(lang) ? languages.filter((l) => l !== lang) : [...languages, lang];
+    setLanguages(updatedLanguages);
+    updateSearchParams({ title: titleQuery, author: authorQuery, language: updatedLanguages.join(','), page: '1' });
   };
 
   const updateSearchParams = (newParams: Record<string, string>) => {
     const updatedParams = Object.fromEntries(searchParams.entries());
+    let shouldUpdate = false;
+
     Object.keys(newParams).forEach((key) => {
-      if (newParams[key]) {
+      if (newParams[key] && updatedParams[key] !== newParams[key]) {
         updatedParams[key] = newParams[key];
-      } else {
+        shouldUpdate = true; // Устанавливаем флаг, если есть изменения
+      } else if (!newParams[key]) {
         delete updatedParams[key];
+        shouldUpdate = true;
       }
     });
 
-    if (Object.keys(updatedParams).length > 0) {
+    if (shouldUpdate) {
       setSearchParams(updatedParams);
-    } else {
-      setSearchParams({});
     }
   };
 
@@ -86,30 +85,35 @@ const BooksView = () => {
     setTitleQuery('');
     setAuthorQuery('');
     setLanguages([]);
+    currentPageRef.current = 1;
     setSearchParams({});
   };
 
   useEffect(() => {
     const title = searchParams.get('title') || '';
     const author = searchParams.get('author') || '';
-    const language = searchParams.get('language') ? searchParams.get('language')?.split(',') : [];
+    const language = searchParams.get('language') ? searchParams.get('language')!.split(',') : [];
+    const page = parseInt(searchParams.get('page') || '1', 10);
 
-    setTitleQuery(title);
-    setAuthorQuery(author);
-    setLanguages(language);
-
-    // updateSearchParams({
-    //   title: titleQuery,
-    //   author: authorQuery,
-    //   ...(languages.length && {language: languages.join(',')
-    //   })
-    // });
+    if (title !== titleQuery) setTitleQuery(title);
+    if (author !== authorQuery) setAuthorQuery(author);
+    if (JSON.stringify(language) !== JSON.stringify(languages)) setLanguages(language);
+    currentPageRef.current = page;
   }, [searchParams]);
 
   const handleScroll = () => {
     const bottom = window.innerHeight + window.scrollY >= document.body.offsetHeight - 100;
     if (bottom && hasNextPage && !isFetchingNextPage) {
-      fetchNextPage();
+      fetchNextPage().then(() => {
+        const nextPage = currentPageRef.current + 1;
+        currentPageRef.current = nextPage;
+        updateSearchParams({
+          title: titleQuery,
+          author: authorQuery,
+          language: languages.join(','),
+          page: nextPage.toString(),
+        });
+      });
     }
   };
 
@@ -121,20 +125,13 @@ const BooksView = () => {
   }, [hasNextPage, isFetchingNextPage]);
 
 
-  const handleBookClick = (id: number) => {
-    console.log("searchParams", ...searchParams)
-
-    const currentParams = {
-      title: titleQuery,
-      author: authorQuery,
-      language: languages.join(','),
-    };
-
-    navigate(`${id}?${new URLSearchParams(currentParams)}`)
+  const onBookClickHandler = (id:number) => {
+    const serchParams = location.search
+    navigate(`/${id}${serchParams}`)
   }
 
-  if (isLoading) return <div style={{textAlign: "center"}}>Loading...</div>;
-  if (error instanceof Error) return <div style={{textAlign: "center"}}>Error: {error.message}</div>;
+  if (isLoading) return <div style={{ textAlign: "center" }}>Loading...</div>;
+  if (isError && error instanceof Error) return <div style={{ textAlign: "center" }}>Error: {error.message}</div>;
 
   return (
     <>
@@ -178,21 +175,23 @@ const BooksView = () => {
         </label>
       </div>
 
-
       <div className={s.bookGrid}>
-
-        {data?.pages.map(p => p.results.map(b => <BookItem key={b.id} cover={b.formats['image/jpeg']}
-                                                           title={b.title}
-                                                           authors={b.authors}
-                                                           onClick={handleBookClick}
-                                                           downloads={b.download_count} id={b.id}/>))}
+        {data?.pages.map((page) => page.results.map((book) => (
+          <BookItem
+            key={book.id}
+            cover={book.formats['image/jpeg']}
+            title={book.title}
+            authors={book.authors}
+            downloads={book.download_count}
+            id={book.id}
+            onClick={onBookClickHandler}
+          />
+        )))}
       </div>
 
-      {isFetchingNextPage && <div style={{textAlign: "center"}}>Loading more...</div>}
-
+      {isFetchingNextPage && <div style={{ textAlign: "center" }}>Loading more...</div>}
     </>
-  )
-    ;
+  );
 };
 
 export default BooksView;

@@ -1,10 +1,10 @@
-export const fetchBooks = async (page: number, title: string, author: string, languages: string[]): Promise<BooksResponse> => {
+export const fetchBooks = async (page: number, title?: string, author?: string, languages?: string[]): Promise<BooksResponse> => {
   const searchTerms = [title, author].filter(Boolean).join(' ');
 
   const params = new URLSearchParams({
     page: page.toString(),
     ...(searchTerms && {search: searchTerms}),
-    ...(languages.length && {languages: languages.join(',')}),
+    ...(languages?.length && {languages: languages.join(',')}),
   })
 
   const res = await fetch(`https://gutendex.com/books/?${params}`);
@@ -12,13 +12,14 @@ export const fetchBooks = async (page: number, title: string, author: string, la
   return res.json();
 };
 
+
 export const fetchBookById = async (id: number): Promise<Book> => {
   const res = await fetch(`https://gutendex.com/books/${id}`);
   if (!res.ok) throw new Error('Failed to fetch book');
   return res.json();
 };
 
-interface Book {
+export interface Book {
   id: number;
   title: string;
   authors: Author[];
@@ -40,7 +41,7 @@ interface Book {
   download_count: number;
 }
 
-interface BooksResponse {
+export interface BooksResponse {
   count: number;
   next: string | null;
   previous: string | null;

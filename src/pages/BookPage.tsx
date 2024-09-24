@@ -3,7 +3,7 @@ import {useQuery} from "@tanstack/react-query";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
 
 const BookPage = () => {
-    const {id} = useParams<{ id: string }>()
+    const {id = '0' } = useParams<{ id: string }>()
     const navigate = useNavigate()
     const location = useLocation()
 

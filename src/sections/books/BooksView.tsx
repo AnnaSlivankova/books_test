@@ -35,7 +35,7 @@ const BooksView = () => {
     queryFn: ({pageParam=1}) => fetchBooks(pageParam, debouncedTitleQuery, debouncedAuthorQuery, languages),
     initialPageParam: 1,
     // getNextPageParam: (lastPage, pages) => lastPage.next,
-    getNextPageParam: (lastPage, allPages, lastPageParam) => lastPageParam + 1,
+    getNextPageParam: ( lastPageParam) => lastPageParam + 1,
   })
 
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {

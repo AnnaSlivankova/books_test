@@ -9,7 +9,7 @@ const BookPage = () => {
 
     const {data: book, isLoading, error} = useQuery({
       queryKey: ['book', id],
-      queryFn: () => fetchBookById(+id),
+      queryFn: () => fetchBookById(Number(id)),
     });
 
     console.log('book', book)

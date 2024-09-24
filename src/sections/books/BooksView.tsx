@@ -15,34 +15,28 @@ const BooksView = () => {
   const [authorQuery, setAuthorQuery] = useState<string>(searchParams.get('author') || '');
   const [languages, setLanguages] = useState<string[]>(searchParams.get('language') ? searchParams.get('language')!.split(',') : []);
 
-  // Используем useRef для хранения текущей страницы
   const currentPageRef = useRef<number>(parseInt(searchParams.get('page') || '1', 10));
 
   const debouncedTitleQuery = useDebounce(titleQuery, 1000);
   const debouncedAuthorQuery = useDebounce(authorQuery, 1000);
 
-  // Используем useInfiniteQuery для пагинации
   const {
     data,
-    isLoading,
-    isError,
     error,
     fetchNextPage,
     hasNextPage,
+    // isFetching,
+    isError,
+    isLoading,
     isFetchingNextPage,
+    // status,
   } = useInfiniteQuery({
     queryKey: ['books', debouncedTitleQuery, debouncedAuthorQuery, languages],
-    queryFn: ({ pageParam = currentPageRef.current }) => fetchBooks(pageParam, debouncedTitleQuery, debouncedAuthorQuery, languages),
-    getNextPageParam: (lastPage) => {
-      const nextUrl = lastPage.next;
-      if (nextUrl) {
-        const urlParams = new URLSearchParams(new URL(nextUrl).search);
-        return parseInt(urlParams.get('page') || '1', 10);
-      }
-      return undefined;
-    },
-    enabled: true,
-  });
+    queryFn: ({pageParam=1}) => fetchBooks(pageParam, debouncedTitleQuery, debouncedAuthorQuery, languages),
+    initialPageParam: 1,
+    // getNextPageParam: (lastPage, pages) => lastPage.next,
+    getNextPageParam: (lastPage, allPages, lastPageParam) => lastPageParam + 1,
+  })
 
   const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -179,7 +173,7 @@ const BooksView = () => {
         {data?.pages.map((page) => page.results.map((book) => (
           <BookItem
             key={book.id}
-            cover={book.formats['image/jpeg']}
+            cover={book.formats['image/jpeg'] as string}
             title={book.title}
             authors={book.authors}
             downloads={book.download_count}
